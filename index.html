@@ -7,18 +7,22 @@
   <style>
     body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
     h1 { text-align: center; }
-    .card { background: white; padding: 16px; margin: 12px auto; border-radius: 8px; max-width: 600px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    .card { background: white; padding: 16px; margin: 12px auto; border-radius: 8px; max-width: 700px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
     input, button { padding: 10px; margin: 6px 0; border-radius: 6px; border: 1px solid #ccc; width: 100%; }
     button { background: #2563eb; color: white; cursor: pointer; font-weight: bold; }
     button:hover { background: #1e40af; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
     .low-stock { color: red; font-weight: bold; }
+    .autocomplete-suggestions { border: 1px solid #ccc; max-height: 150px; overflow-y: auto; background: white; position: absolute; z-index: 10; width: calc(100% - 24px); }
+    .autocomplete-suggestions div { padding: 8px; cursor: pointer; }
+    .autocomplete-suggestions div:hover { background: #e5e7eb; }
   </style>
 </head>
 <body>
   <h1>📦 Sistema Mercearia / Bar</h1>
 
+  <!-- Cadastro de Produtos -->
   <div class="card">
     <h3>Cadastrar Produto</h3>
     <input id="nome" type="text" placeholder="Nome do produto (ex: Bala, Refrigerante)">
@@ -27,13 +31,26 @@
     <button onclick="cadastrarProduto()">Cadastrar</button>
   </div>
 
-  <div class="card">
+  <!-- Pesquisa de Produto -->
+  <div class="card" style="position: relative;">
     <h3>Pesquisar Produto</h3>
-    <input id="pesquisa" type="text" placeholder="Digite o nome do produto">
+    <input id="pesquisa" type="text" placeholder="Digite o nome do produto" oninput="mostrarSugestoes()">
+    <div id="sugestoes" class="autocomplete-suggestions"></div>
     <button onclick="pesquisarProduto()">Pesquisar</button>
     <p id="resultado"></p>
   </div>
 
+  <!-- Sistema de Caixa -->
+  <div class="card">
+    <h3>💰 Caixa (Venda de Produtos)</h3>
+    <input id="produtoVenda" type="text" placeholder="Digite o nome do produto" oninput="mostrarSugestoesVenda()">
+    <div id="sugestoesVenda" class="autocomplete-suggestions"></div>
+    <input id="quantidadeVenda" type="number" placeholder="Quantidade vendida">
+    <button onclick="realizarVenda()">Registrar Venda</button>
+    <p id="msgCaixa"></p>
+  </div>
+
+  <!-- Lista de Produtos -->
   <div class="card">
     <h3>📋 Lista de Produtos</h3>
     <table>
@@ -100,8 +117,39 @@
       }
     }
 
-    // Inicializa a tabela ao carregar
-    atualizarTabela();
-  </script>
-</body>
-</html>
+    // --- Sugestões de Pesquisa ---
+    function mostrarSugestoes() {
+      const termo = document.getElementById("pesquisa").value.trim().toLowerCase();
+      const sugestoesDiv = document.getElementById("sugestoes");
+      sugestoesDiv.innerHTML = "";
+
+      if (termo.length > 0) {
+        const filtrados = produtos.filter(p => p.nome.toLowerCase().includes(termo));
+        filtrados.forEach(p => {
+          const div = document.createElement("div");
+          div.textContent = p.nome;
+          div.onclick = () => {
+            document.getElementById("pesquisa").value = p.nome;
+            sugestoesDiv.innerHTML = "";
+          };
+          sugestoesDiv.appendChild(div);
+        });
+      }
+    }
+
+    function mostrarSugestoesVenda() {
+      const termo = document.getElementById("produtoVenda").value.trim().toLowerCase();
+      const sugestoesDiv = document.getElementById("sugestoesVenda");
+      sugestoesDiv.innerHTML = "";
+
+      if (termo.length > 0) {
+        const filtrados = produtos.filter(p => p.nome.toLowerCase().includes(termo));
+        filtrados.forEach(p => {
+          const div = document.createElement("div");
+          div.textContent = p.nome;
+          div.onclick = () => {
+            document.getElementById("produtoVenda").value = p.nome;
+            sugestoesDiv.innerHTML = "";
+          };
+          sugestoesDiv.appendChild(div);
+        });
