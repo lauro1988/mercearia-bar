@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema Mercearia / Bar</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
+    h1 { text-align: center; }
+    .card { background: white; padding: 16px; margin: 12px auto; border-radius: 8px; max-width: 700px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    input, button { padding: 10px; margin: 6px 0; border-radius: 6px; border: 1px solid #ccc; width: 100%; }
+    button { background: #2563eb; color: white; cursor: pointer; font-weight: bold; }
+    button:hover { background: #1e40af; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
+    .low-stock { color: red; font-weight: bold; }
+    .autocomplete-suggestions { border: 1px solid #ccc; max-height: 150px; overflow-y: auto; background: white; position: absolute; z-index: 10; width: calc(100% - 24px); }
+    .autocomplete-suggestions div { padding: 8px; cursor: pointer; }
+    .autocomplete-suggestions div:hover { background: #e5e7eb; }
+  </style>
+</head>
+<body>
+  <h1>📦 Sistema Mercearia / Bar</h1>
+
+  <!-- Cadastro de Produtos -->
+  <div class="card">
+    <h3>Cadastrar Produto</h3>
+    <input id="nome" type="text" placeholder="Nome do produto (ex: Bala, Refrigerante)">
+    <input id="preco" type="number" step="0.01" placeholder="Preço (R$)">
+    <input id="estoque" type="number" placeholder="Quantidade em estoque">
+    <button onclick="cadastrarProduto()">Cadastrar</button>
+  </div>
+
+  <!-- Pesquisa de Produto -->
+  <div class="card" style="position: relative;">
+    <h3>Pesquisar Produto</h3>
+    <input id="pesquisa" type="text" placeholder="Digite o nome do produto" oninput="mostrarSugestoes()">
+    <div id="sugestoes" class="autocomplete-suggestions"></div>
+    <button onclick="pesquisarProduto()">Pesquisar</button>
+    <p id="resultado"></p>
+  </div>
+
+  <!-- Sistema de Caixa -->
+  <div class="card">
+    <h3>💰 Caixa (Venda de Produtos)</h3>
+    <input id="produtoVenda" type="text" placeholder="Digite o nome do produto" oninput="mostrarSugestoesVenda()">
+    <div id="sugestoesVenda" class="autocomplete-suggestions"></div>
+    <input id="quantidadeVenda" type="number" placeholder="Quantidade vendida">
+    <button onclick="realizarVenda()">Registrar Venda</button>
+    <p id="msgCaixa"></p>
+  </div>
+
+  <!-- Lista de Produtos -->
+  <div class="card">
+    <h3>📋 Lista de Produtos</h3>
+    <table>
+      <thead>
+        <tr><th>Produto</th><th>Preço</th><th>Estoque</th></tr>
+      </thead>
+      <tbody id="tabelaProdutos"></tbody>
+    </table>
+  </div>
+
+  <script>
+    let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+
+    function salvar() {
+      localStorage.setItem("produtos", JSON.stringify(produtos));
+    }
+
+    function atualizarTabela() {
+      const tbody = document.getElementById("tabelaProdutos");
+      tbody.innerHTML = "";
+      produtos.forEach(p => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${p.nome}</td>
+          <td>R$ ${p.preco.toFixed(2)}</td>
+          <td class="${p.estoque <= 5 ? 'low-stock' : ''}">${p.estoque}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function cadastrarProduto() {
+      const nome = document.getElementById("nome").value.trim();
+      const preco = parseFloat(document.getElementById("preco").value);
+      const estoque = parseInt(document.getElementById("estoque").value);
+
+      if (!nome || isNaN(preco) || isNaN(estoque)) {
+        alert("Preencha todos os campos corretamente!");
+        return;
+      }
+
+      produtos.push({ nome, preco, estoque });
+      salvar();
+      atualizarTabela();
+
+      document.getElementById("nome").value = "";
+      document.getElementById("preco").value = "";
+      document.getElementById("estoque").value = "";
+    }
+
+    function pesquisarProduto() {
+      const termo = document.getElementById("pesquisa").value.trim().toLowerCase();
+      const resultado = document.getElementById("resultado");
+
+      const produto = produtos.find(p => p.nome.toLowerCase() === termo);
+
+      if (produto) {
+        resultado.innerHTML = `➡️ ${produto.nome}: <strong>R$ ${produto.preco.toFixed(2)}</strong> | Estoque: ${produto.estoque}`;
+        if (produto.estoque <= 5) {
+          resultado.innerHTML += " ⚠️ <span class='low-stock'>Estoque baixo!</span>";
+        }
+      } else {
+        resultado.innerHTML = "❌ Produto não encontrado.";
+      }
+    }
+
+    // --- Sugestões de Pesquisa ---
+    function mostrarSugestoes() {
+      const termo = document.getElementById("pesquisa").value.trim().toLowerCase();
+      const sugestoesDiv = document.getElementById("sugestoes");
+      sugestoesDiv.innerHTML = "";
+
+      if (termo.length > 0) {
+        const filtrados = produtos.filter(p => p.nome.toLowerCase().includes(termo));
+        filtrados.forEach(p => {
+          const div = document.createElement("div");
+          div.textContent = p.nome;
+          div.onclick = () => {
+            document.getElementById("pesquisa").value = p.nome;
+            sugestoesDiv.innerHTML = "";
+          };
+          sugestoesDiv.appendChild(div);
+        });
+      }
+    }
+
+    function mostrarSugestoesVenda() {
+      const termo = document.getElementById("produtoVenda").value.trim().toLowerCase();
+      const sugestoesDiv = document.getElementById("sugestoesVenda");
+      sugestoesDiv.innerHTML = "";
+
+      if (termo.length > 0) {
+        const filtrados = produtos.filter(p => p.nome.toLowerCase().includes(termo));
+        filtrados.forEach(p => {
+          const div = document.createElement("div");
+          div.textContent = p.nome;
+          div.onclick = () => {
+            document.getElementById("produtoVenda").value = p.nome;
+            sugestoesDiv.innerHTML = "";
+          };
+          sugestoesDiv.appendChild(div);
+        });
+      }
+    }
+
+    // --- Caixa (Venda) ---
+    function realizarVenda() {
+      const nome = document.getElementById("produtoVenda").value.trim().toLowerCase();
+      const quantidade = parseInt(document.getElementById("quantidadeVenda").value);
+      const msgCaixa = document.getElementById("msgCaixa");
+
+      const produto = produtos.find(p => p.nome.toLowerCase() === nome);
+
+      if (!produto) {
+        msgCaixa.textContent = "❌ Produto não encontrado.";
+        msgCaixa.style.color = "red";
+        return;
+      }
+
+      if (isNaN(quantidade) || quantidade <= 0) {
+        msgCaixa.textContent = "Digite uma quantidade válida.";
+        msgCaixa.style.color = "red";
+        return;
+      }
+
+      if (quantidade > produto.estoque) {
+        msgCaixa.textContent = "⚠️ Estoque insuficiente!";
+        msgCaixa.style.color = "red";
+        return;
+      }
+
+      // Dar baixa no estoque
+      produto.estoque -= quantidade;
+      salvar();
+      atualizarTabela();
+
+      msgCaixa.textContent = `✅ Venda registrada: ${quantidade}x ${produto.nome}`;
+      msgCaixa.style.color = "green";
+
+      document.getElementById("produtoVenda").value = "";
+      document.getElementById("quantidadeVenda").value = "";
+    }
+
+    // Inicializa a tabela ao carregar
+    atualizarTabela();
+  </script>
+</body>
+</html>
