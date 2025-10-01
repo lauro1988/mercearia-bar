@@ -5,67 +5,121 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema Mercearia / Bar</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; }
-    h1 { text-align: center; }
-    .card { background: white; padding: 16px; margin: 12px auto; border-radius: 8px; max-width: 700px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    input, button { padding: 10px; margin: 6px 0; border-radius: 6px; border: 1px solid #ccc; width: 100%; }
-    button { background: #2563eb; color: white; cursor: pointer; font-weight: bold; }
+    body { 
+      font-family: Arial, sans-serif; 
+      background: #1c1c1c; 
+      margin: 0; 
+      padding: 0; 
+      color: #e5e5e5;
+    }
+    h1 { text-align: center; padding: 20px; color: #f5f5f5; }
+    .tabs { display: flex; justify-content: center; background: #2a2a2a; }
+    .tab { 
+      flex: 1; padding: 12px; text-align: center; cursor: pointer; 
+      color: #ddd; font-weight: bold; transition: 0.3s;
+    }
+    .tab:hover { background: #3a3a3a; }
+    .tab.active { background: #444; color: #fff; }
+
+    .content { display: none; padding: 20px; }
+    .content.active { display: block; }
+
+    .card { 
+      background: #2a2a2a; 
+      padding: 16px; 
+      margin: 12px auto; 
+      border-radius: 10px; 
+      max-width: 700px; 
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+    input, button { 
+      padding: 10px; margin: 6px 0; 
+      border-radius: 6px; border: none; 
+      width: 100%; 
+    }
+    input { background: #3a3a3a; color: #f5f5f5; }
+    button { background: #2563eb; color: white; font-weight: bold; cursor: pointer; }
     button:hover { background: #1e40af; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
-    .low-stock { color: red; font-weight: bold; }
-    .autocomplete-suggestions { border: 1px solid #ccc; max-height: 150px; overflow-y: auto; background: white; position: absolute; z-index: 10; width: calc(100% - 24px); }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; color: #f5f5f5; }
+    th, td { padding: 8px; border-bottom: 1px solid #555; text-align: left; }
+    .low-stock { color: #ff4d4d; font-weight: bold; }
+    .autocomplete-suggestions { 
+      border: 1px solid #555; 
+      max-height: 150px; 
+      overflow-y: auto; 
+      background: #3a3a3a; 
+      position: absolute; 
+      z-index: 10; 
+      width: calc(100% - 24px); 
+    }
     .autocomplete-suggestions div { padding: 8px; cursor: pointer; }
-    .autocomplete-suggestions div:hover { background: #e5e7eb; }
+    .autocomplete-suggestions div:hover { background: #555; }
+    #valorCaixa { font-size: 18px; margin-top: 10px; font-weight: bold; }
   </style>
 </head>
 <body>
   <h1>📦 Sistema Mercearia / Bar</h1>
 
-  <!-- Cadastro de Produtos -->
-  <div class="card">
-    <h3>Cadastrar Produto</h3>
-    <input id="nome" type="text" placeholder="Nome do produto (ex: Bala, Refrigerante)">
-    <input id="preco" type="number" step="0.01" placeholder="Preço (R$)">
-    <input id="estoque" type="number" placeholder="Quantidade em estoque">
-    <button onclick="cadastrarProduto()">Cadastrar</button>
+  <!-- Abas -->
+  <div class="tabs">
+    <div class="tab active" onclick="abrirAba(event, 'cadastro')">Cadastrar Produto</div>
+    <div class="tab" onclick="abrirAba(event, 'pesquisa')">Pesquisar Produto</div>
+    <div class="tab" onclick="abrirAba(event, 'caixa')">Caixa</div>
+    <div class="tab" onclick="abrirAba(event, 'estoque')">Estoque</div>
   </div>
 
-  <!-- Pesquisa de Produto -->
-  <div class="card" style="position: relative;">
-    <h3>Pesquisar Produto</h3>
-    <input id="pesquisa" type="text" placeholder="Digite o nome do produto" oninput="mostrarSugestoes()">
-    <div id="sugestoes" class="autocomplete-suggestions"></div>
-    <button onclick="pesquisarProduto()">Pesquisar</button>
-    <p id="resultado"></p>
+  <!-- Conteúdo das Abas -->
+  <div id="cadastro" class="content active">
+    <div class="card">
+      <h3>Cadastrar Produto</h3>
+      <input id="nome" type="text" placeholder="Nome do produto">
+      <input id="preco" type="number" step="0.01" placeholder="Preço (R$)">
+      <input id="estoque" type="number" placeholder="Quantidade em estoque">
+      <button onclick="cadastrarProduto()">Cadastrar</button>
+    </div>
   </div>
 
-  <!-- Sistema de Caixa -->
-  <div class="card">
-    <h3>💰 Caixa (Venda de Produtos)</h3>
-    <input id="produtoVenda" type="text" placeholder="Digite o nome do produto" oninput="mostrarSugestoesVenda()">
-    <div id="sugestoesVenda" class="autocomplete-suggestions"></div>
-    <input id="quantidadeVenda" type="number" placeholder="Quantidade vendida">
-    <button onclick="realizarVenda()">Registrar Venda</button>
-    <p id="msgCaixa"></p>
+  <div id="pesquisa" class="content">
+    <div class="card" style="position: relative;">
+      <h3>Pesquisar Produto</h3>
+      <input id="pesquisaInput" type="text" placeholder="Digite o nome do produto" oninput="mostrarSugestoes()">
+      <div id="sugestoes" class="autocomplete-suggestions"></div>
+      <button onclick="pesquisarProduto()">Pesquisar</button>
+      <p id="resultado"></p>
+    </div>
   </div>
 
-  <!-- Lista de Produtos -->
-  <div class="card">
-    <h3>📋 Lista de Produtos</h3>
-    <table>
-      <thead>
-        <tr><th>Produto</th><th>Preço</th><th>Estoque</th></tr>
-      </thead>
-      <tbody id="tabelaProdutos"></tbody>
-    </table>
+  <div id="caixa" class="content">
+    <div class="card">
+      <h3>💰 Caixa (Venda de Produtos)</h3>
+      <input id="produtoVenda" type="text" placeholder="Digite o nome do produto" oninput="mostrarSugestoesVenda()">
+      <div id="sugestoesVenda" class="autocomplete-suggestions"></div>
+      <input id="quantidadeVenda" type="number" placeholder="Quantidade vendida">
+      <button onclick="realizarVenda()">Registrar Venda</button>
+      <p id="msgCaixa"></p>
+      <p id="valorCaixa">Valor em Caixa: R$ 0,00</p>
+    </div>
+  </div>
+
+  <div id="estoque" class="content">
+    <div class="card">
+      <h3>📋 Estoque</h3>
+      <table>
+        <thead>
+          <tr><th>Produto</th><th>Preço</th><th>Estoque</th></tr>
+        </thead>
+        <tbody id="tabelaProdutos"></tbody>
+      </table>
+    </div>
   </div>
 
   <script>
     let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+    let valorCaixa = parseFloat(localStorage.getItem("valorCaixa")) || 0;
 
     function salvar() {
       localStorage.setItem("produtos", JSON.stringify(produtos));
+      localStorage.setItem("valorCaixa", valorCaixa);
     }
 
     function atualizarTabela() {
@@ -99,10 +153,11 @@
       document.getElementById("nome").value = "";
       document.getElementById("preco").value = "";
       document.getElementById("estoque").value = "";
+      alert("✅ Produto cadastrado com sucesso!");
     }
 
     function pesquisarProduto() {
-      const termo = document.getElementById("pesquisa").value.trim().toLowerCase();
+      const termo = document.getElementById("pesquisaInput").value.trim().toLowerCase();
       const resultado = document.getElementById("resultado");
 
       const produto = produtos.find(p => p.nome.toLowerCase() === termo);
@@ -117,9 +172,8 @@
       }
     }
 
-    // --- Sugestões de Pesquisa ---
     function mostrarSugestoes() {
-      const termo = document.getElementById("pesquisa").value.trim().toLowerCase();
+      const termo = document.getElementById("pesquisaInput").value.trim().toLowerCase();
       const sugestoesDiv = document.getElementById("sugestoes");
       sugestoesDiv.innerHTML = "";
 
@@ -129,7 +183,7 @@
           const div = document.createElement("div");
           div.textContent = p.nome;
           div.onclick = () => {
-            document.getElementById("pesquisa").value = p.nome;
+            document.getElementById("pesquisaInput").value = p.nome;
             sugestoesDiv.innerHTML = "";
           };
           sugestoesDiv.appendChild(div);
@@ -156,7 +210,6 @@
       }
     }
 
-    // --- Caixa (Venda) ---
     function realizarVenda() {
       const nome = document.getElementById("produtoVenda").value.trim().toLowerCase();
       const quantidade = parseInt(document.getElementById("quantidadeVenda").value);
@@ -182,20 +235,45 @@
         return;
       }
 
-      // Dar baixa no estoque
       produto.estoque -= quantidade;
+      valorCaixa += produto.preco * quantidade;
       salvar();
       atualizarTabela();
 
       msgCaixa.textContent = `✅ Venda registrada: ${quantidade}x ${produto.nome}`;
       msgCaixa.style.color = "green";
 
+      atualizarValorCaixa();
+
       document.getElementById("produtoVenda").value = "";
       document.getElementById("quantidadeVenda").value = "";
     }
 
-    // Inicializa a tabela ao carregar
+    function atualizarValorCaixa() {
+      const valorDiv = document.getElementById("valorCaixa");
+      valorDiv.textContent = `Valor em Caixa: R$ ${valorCaixa.toFixed(2)}`;
+      if (valorCaixa > 400) {
+        valorDiv.style.color = "red";
+        valorDiv.textContent += " ⚠️ Guarde o dinheiro no cofre!";
+      } else {
+        valorDiv.style.color = "#00ff7f";
+      }
+    }
+
+    function abrirAba(evt, id) {
+      const contents = document.querySelectorAll(".content");
+      const tabs = document.querySelectorAll(".tab");
+
+      contents.forEach(c => c.classList.remove("active"));
+      tabs.forEach(t => t.classList.remove("active"));
+
+      document.getElementById(id).classList.add("active");
+      evt.currentTarget.classList.add("active");
+    }
+
+    // Inicialização
     atualizarTabela();
+    atualizarValorCaixa();
   </script>
 </body>
 </html>
