@@ -1,114 +1,302 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema de Caixa</title>
+  <title>Sistema Mercearia / Bar</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .container { max-width: 500px; margin: auto; }
-    input, select, button { width: 100%; margin: 5px 0; padding: 10px; }
-    .card { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 8px; }
-    @media (max-width: 600px) {
-      body { font-size: 16px; }
-      .container { width: 95%; }
+    body { 
+      font-family: Arial, sans-serif; 
+      background: #1c1c1c; 
+      margin: 0; padding: 0; 
+      color: #e5e5e5;
+    }
+    h1 { text-align: center; padding: 20px; color: #f5f5f5; margin-bottom: 60px;}
+    
+    /* Abas (desktop) */
+    .tabs { display: flex; justify-content: center; background: #2a2a2a; position: fixed; bottom: 0; width: 100%; z-index: 100; }
+    .tab { flex: 1; padding: 14px; text-align: center; cursor: pointer; color: #ddd; font-weight: bold; transition: 0.3s; }
+    .tab:hover { background: #3a3a3a; }
+    .tab.active { background: #444; color: #fff; }
+
+    /* Conteúdo */
+    .content { display: none; padding: 20px; }
+    .content.active { display: block; margin-bottom: 70px; }
+
+    .card { 
+      background: #2a2a2a; 
+      padding: 16px; 
+      margin: 12px auto; 
+      border-radius: 10px; 
+      max-width: 700px; 
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+    input, button, select { 
+      padding: 12px; margin: 6px 0; 
+      border-radius: 6px; border: none; 
+      width: 100%; 
+      font-size: 16px;
+    }
+    input, select { background: #3a3a3a; color: #f5f5f5; }
+    button { background: #2563eb; color: white; font-weight: bold; cursor: pointer; }
+    button:hover { background: #1e40af; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; color: #f5f5f5; font-size: 15px;}
+    th, td { padding: 8px; border-bottom: 1px solid #555; text-align: left; }
+    .low-stock { color: #ff4d4d; font-weight: bold; }
+    .autocomplete-suggestions { 
+      border: 1px solid #555; 
+      max-height: 150px; 
+      overflow-y: auto; 
+      background: #3a3a3a; 
+      position: absolute; 
+      z-index: 10; 
+      width: calc(100% - 24px); 
+    }
+    .autocomplete-suggestions div { padding: 8px; cursor: pointer; }
+    .autocomplete-suggestions div:hover { background: #555; }
+    #valorCaixa { font-size: 18px; margin-top: 10px; font-weight: bold; }
+    
+    /* Responsivo */
+    @media (max-width: 768px) {
+      h1 { font-size: 20px; }
+      .tab { font-size: 14px; padding: 10px; }
+      .card { padding: 12px; margin: 8px; }
+      input, button, select { font-size: 14px; }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Caixa</h2>
-    
-    <input type="text" id="pesquisaProduto" placeholder="Digite o nome do produto...">
-    <p id="detalhesProduto"></p>
+  <h1>📦 Sistema Mercearia / Bar</h1>
 
-    <label>Forma de pagamento:</label>
-    <select id="formaPagamento">
-      <option value="Dinheiro">Dinheiro</option>
-      <option value="Pix">Pix</option>
-      <option value="Cartão">Cartão</option>
-    </select>
+  <!-- Abas -->
+  <div class="tabs">
+    <div class="tab active" onclick="abrirAba(event, 'cadastro')">Cadastrar</div>
+    <div class="tab" onclick="abrirAba(event, 'pesquisa')">Pesquisar</div>
+    <div class="tab" onclick="abrirAba(event, 'caixa')">Caixa</div>
+    <div class="tab" onclick="abrirAba(event, 'estoque')">Estoque</div>
+  </div>
 
-    <button onclick="registrarVenda()">Registrar Venda</button>
-
+  <!-- Cadastro -->
+  <div id="cadastro" class="content active">
     <div class="card">
-      <h3>Fechamento de Caixa</h3>
-      <button onclick="fecharCaixa()">Fechar Caixa</button>
-      <pre id="relatorioCaixa"></pre>
-      <button onclick="limparHistorico()">Zerar Caixa</button>
+      <h3>Cadastrar Produto</h3>
+      <input id="nome" type="text" placeholder="Nome do produto">
+      <input id="preco" type="number" step="0.01" placeholder="Preço (R$)">
+      <input id="estoque" type="number" placeholder="Quantidade em estoque">
+      <button onclick="cadastrarProduto()">Cadastrar</button>
     </div>
   </div>
 
-<script>
-let estoque = [
-  { nome: "Arroz", preco: 10.00, quantidade: 20 },
-  { nome: "Feijão", preco: 8.50, quantidade: 15 },
-  { nome: "Açúcar", preco: 5.00, quantidade: 30 }
-];
+  <!-- Pesquisa -->
+  <div id="pesquisa" class="content">
+    <div class="card" style="position: relative;">
+      <h3>Pesquisar Produto</h3>
+      <input id="pesquisaInput" type="text" placeholder="Digite o nome do produto" oninput="mostrarSugestoes()">
+      <div id="sugestoes" class="autocomplete-suggestions"></div>
+      <button onclick="pesquisarProduto()">Pesquisar</button>
+      <p id="resultado"></p>
+    </div>
+  </div>
 
-let historicoVendas = [];
-let produtoSelecionado = null;
+  <!-- Caixa -->
+  <div id="caixa" class="content">
+    <div class="card">
+      <h3>💰 Caixa (Venda de Produtos)</h3>
+      <input id="produtoVenda" type="text" placeholder="Digite o nome do produto" oninput="mostrarSugestoesVenda()">
+      <div id="sugestoesVenda" class="autocomplete-suggestions"></div>
+      <p id="precoProduto"></p>
+      <input id="quantidadeVenda" type="number" placeholder="Quantidade vendida">
+      
+      <!-- Forma de pagamento -->
+      <select id="formaPagamento">
+        <option value="dinheiro">💵 Dinheiro</option>
+        <option value="pix">⚡ Pix</option>
+        <option value="cartao">💳 Cartão</option>
+      </select>
 
-// Pesquisar produto
-document.getElementById("pesquisaProduto").addEventListener("input", function() {
-  let nome = this.value.toLowerCase();
-  produtoSelecionado = estoque.find(p => p.nome.toLowerCase().includes(nome));
-  
-  if (produtoSelecionado) {
-    document.getElementById("detalhesProduto").innerText = 
-      `Produto: ${produtoSelecionado.nome} | Preço: R$ ${produtoSelecionado.preco.toFixed(2)} | Estoque: ${produtoSelecionado.quantidade}`;
-  } else {
-    document.getElementById("detalhesProduto").innerText = "Produto não encontrado";
-  }
-});
+      <button onclick="realizarVenda()">Registrar Venda</button>
+      <p id="msgCaixa"></p>
+      <p id="valorCaixa">Valor em Caixa: R$ 0,00</p>
+    </div>
+  </div>
 
-// Registrar venda
-function registrarVenda() {
-  if (!produtoSelecionado || produtoSelecionado.quantidade <= 0) {
-    alert("Produto não disponível!");
-    return;
-  }
+  <!-- Estoque -->
+  <div id="estoque" class="content">
+    <div class="card">
+      <h3>📋 Estoque</h3>
+      <table>
+        <thead>
+          <tr><th>Produto</th><th>Preço</th><th>Estoque</th></tr>
+        </thead>
+        <tbody id="tabelaProdutos"></tbody>
+      </table>
+    </div>
+  </div>
 
-  let forma = document.getElementById("formaPagamento").value;
-  
-  produtoSelecionado.quantidade--;
-  historicoVendas.push({ produto: produtoSelecionado.nome, valor: produtoSelecionado.preco, forma: forma });
+  <script>
+    let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+    let valorCaixa = parseFloat(localStorage.getItem("valorCaixa")) || 0;
 
-  alert("Venda registrada com sucesso!");
-  document.getElementById("detalhesProduto").innerText =
-    `Produto: ${produtoSelecionado.nome} | Preço: R$ ${produtoSelecionado.preco.toFixed(2)} | Estoque: ${produtoSelecionado.quantidade}`;
-}
+    function salvar() {
+      localStorage.setItem("produtos", JSON.stringify(produtos));
+      localStorage.setItem("valorCaixa", valorCaixa);
+    }
 
-// Fechar caixa
-function fecharCaixa() {
-  if (historicoVendas.length === 0) {
-    document.getElementById("relatorioCaixa").innerText = "Nenhuma venda registrada hoje.";
-    return;
-  }
+    function atualizarTabela() {
+      const tbody = document.getElementById("tabelaProdutos");
+      tbody.innerHTML = "";
+      produtos.forEach(p => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${p.nome}</td>
+          <td>R$ ${p.preco.toFixed(2)}</td>
+          <td class="${p.estoque <= 5 ? 'low-stock' : ''}">${p.estoque}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
-  let total = 0;
-  let resumo = { Dinheiro: 0, Pix: 0, Cartão: 0 };
+    function cadastrarProduto() {
+      const nome = document.getElementById("nome").value.trim();
+      const preco = parseFloat(document.getElementById("preco").value);
+      const estoque = parseInt(document.getElementById("estoque").value);
 
-  historicoVendas.forEach(v => {
-    total += v.valor;
-    resumo[v.forma] += v.valor;
-  });
+      if (!nome || isNaN(preco) || isNaN(estoque)) {
+        alert("Preencha todos os campos corretamente!");
+        return;
+      }
 
-  let relatorio = `Resumo do dia:\n`;
-  relatorio += `Total em Dinheiro: R$ ${resumo.Dinheiro.toFixed(2)}\n`;
-  relatorio += `Total em Pix: R$ ${resumo.Pix.toFixed(2)}\n`;
-  relatorio += `Total em Cartão: R$ ${resumo.Cartão.toFixed(2)}\n`;
-  relatorio += `\nTotal Geral: R$ ${total.toFixed(2)}\n`;
-  relatorio += `Quantidade de vendas: ${historicoVendas.length}`;
+      produtos.push({ nome, preco, estoque });
+      salvar();
+      atualizarTabela();
 
-  document.getElementById("relatorioCaixa").innerText = relatorio;
-}
+      document.getElementById("nome").value = "";
+      document.getElementById("preco").value = "";
+      document.getElementById("estoque").value = "";
+      alert("✅ Produto cadastrado com sucesso!");
+    }
 
-// Limpar histórico (novo dia)
-function limparHistorico() {
-  historicoVendas = [];
-  document.getElementById("relatorioCaixa").innerText = "Histórico de vendas zerado!";
-}
-</script>
+    function pesquisarProduto() {
+      const termo = document.getElementById("pesquisaInput").value.trim().toLowerCase();
+      const resultado = document.getElementById("resultado");
+
+      const produto = produtos.find(p => p.nome.toLowerCase() === termo);
+
+      if (produto) {
+        resultado.innerHTML = `➡️ ${produto.nome}: <strong>R$ ${produto.preco.toFixed(2)}</strong> | Estoque: ${produto.estoque}`;
+        if (produto.estoque <= 5) {
+          resultado.innerHTML += " ⚠️ <span class='low-stock'>Estoque baixo!</span>";
+        }
+      } else {
+        resultado.innerHTML = "❌ Produto não encontrado.";
+      }
+    }
+
+    function mostrarSugestoes() {
+      const termo = document.getElementById("pesquisaInput").value.trim().toLowerCase();
+      const sugestoesDiv = document.getElementById("sugestoes");
+      sugestoesDiv.innerHTML = "";
+
+      if (termo.length > 0) {
+        const filtrados = produtos.filter(p => p.nome.toLowerCase().includes(termo));
+        filtrados.forEach(p => {
+          const div = document.createElement("div");
+          div.textContent = p.nome;
+          div.onclick = () => {
+            document.getElementById("pesquisaInput").value = p.nome;
+            sugestoesDiv.innerHTML = "";
+          };
+          sugestoesDiv.appendChild(div);
+        });
+      }
+    }
+
+    function mostrarSugestoesVenda() {
+      const termo = document.getElementById("produtoVenda").value.trim().toLowerCase();
+      const sugestoesDiv = document.getElementById("sugestoesVenda");
+      sugestoesDiv.innerHTML = "";
+
+      if (termo.length > 0) {
+        const filtrados = produtos.filter(p => p.nome.toLowerCase().includes(termo));
+        filtrados.forEach(p => {
+          const div = document.createElement("div");
+          div.textContent = p.nome;
+          div.onclick = () => {
+            document.getElementById("produtoVenda").value = p.nome;
+            document.getElementById("precoProduto").textContent = `💲 Preço: R$ ${p.preco.toFixed(2)}`;
+            sugestoesDiv.innerHTML = "";
+          };
+          sugestoesDiv.appendChild(div);
+        });
+      }
+    }
+
+    function realizarVenda() {
+      const nome = document.getElementById("produtoVenda").value.trim().toLowerCase();
+      const quantidade = parseInt(document.getElementById("quantidadeVenda").value);
+      const pagamento = document.getElementById("formaPagamento").value;
+      const msgCaixa = document.getElementById("msgCaixa");
+
+      const produto = produtos.find(p => p.nome.toLowerCase() === nome);
+
+      if (!produto) {
+        msgCaixa.textContent = "❌ Produto não encontrado.";
+        msgCaixa.style.color = "red";
+        return;
+      }
+
+      if (isNaN(quantidade) || quantidade <= 0) {
+        msgCaixa.textContent = "Digite uma quantidade válida.";
+        msgCaixa.style.color = "red";
+        return;
+      }
+
+      if (quantidade > produto.estoque) {
+        msgCaixa.textContent = "⚠️ Estoque insuficiente!";
+        msgCaixa.style.color = "red";
+        return;
+      }
+
+      produto.estoque -= quantidade;
+      const totalVenda = produto.preco * quantidade;
+      valorCaixa += totalVenda;
+      salvar();
+      atualizarTabela();
+
+      msgCaixa.textContent = `✅ Venda registrada: ${quantidade}x ${produto.nome} | Total: R$ ${totalVenda.toFixed(2)} | Pagamento: ${pagamento}`;
+      msgCaixa.style.color = "green";
+
+      atualizarValorCaixa();
+
+      document.getElementById("produtoVenda").value = "";
+      document.getElementById("quantidadeVenda").value = "";
+      document.getElementById("precoProduto").textContent = "";
+    }
+
+    function atualizarValorCaixa() {
+      const valorDiv = document.getElementById("valorCaixa");
+      valorDiv.textContent = `Valor em Caixa: R$ ${valorCaixa.toFixed(2)}`;
+      if (valorCaixa > 400) {
+        valorDiv.style.color = "red";
+        valorDiv.textContent += " ⚠️ Guarde o dinheiro no cofre!";
+      } else {
+        valorDiv.style.color = "#00ff7f";
+      }
+    }
+
+    function abrirAba(evt, id) {
+      const contents = document.querySelectorAll(".content");
+      const tabs = document.querySelectorAll(".tab");
+
+      contents.forEach(c => c.classList.remove("active"));
+      tabs.forEach(t => t.classList.remove("active"));
+
+      document.getElementById(id).classList.add("active");
+      evt.currentTarget.classList.add("active");
+    }
+
+    atualizarTabela();
+    atualizarValorCaixa();
+  </script>
 </body>
 </html>
